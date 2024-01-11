@@ -132,6 +132,7 @@ public class HostApplication {
 
 		MqttConnectOptions connectOptions = new MqttConnectOptions();
 		connectOptions.setWill(stateTopic, deathPayload, 1, true);
+		host.setTimeToWait(5000);
 		host.connect(connectOptions);
 		logger.info("Host " + host_application_id + " successfully created");
 	}
