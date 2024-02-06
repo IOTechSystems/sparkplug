@@ -120,6 +120,14 @@ public class Utils {
 		return result;
 	}
 
+	public static @NotNull boolean setResultIfNotPass(Map<String, String> results, boolean result, String req_id,
+													  String req_desc) {
+		if (results.get(req_id) == null || !results.get(req_id).equals(PASS)) {
+			results.put(req_id, setResultWithStackTrace(result, req_desc, 2));
+		}
+		return result;
+	}
+
 	public static @NotNull boolean setShouldResultIfNotFail(Map<String, String> results, boolean result, String req_id,
 			String req_desc) {
 		if (results.get(req_id) == null || !results.get(req_id).equals(MAYBE)) {

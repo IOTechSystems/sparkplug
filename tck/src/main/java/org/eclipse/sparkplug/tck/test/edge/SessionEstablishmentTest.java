@@ -27,8 +27,7 @@ import static org.eclipse.sparkplug.tck.test.common.Constants.TOPIC_PATH_NDEATH;
 import static org.eclipse.sparkplug.tck.test.common.Constants.TOPIC_PATH_STATE;
 import static org.eclipse.sparkplug.tck.test.common.Constants.TOPIC_ROOT_SP_BV_1_0;
 import static org.eclipse.sparkplug.tck.test.common.Requirements.*;
-import static org.eclipse.sparkplug.tck.test.common.Utils.setResult;
-import static org.eclipse.sparkplug.tck.test.common.Utils.setShouldResultIfNotFail;
+import static org.eclipse.sparkplug.tck.test.common.Utils.*;
 
 import java.util.Arrays;
 import java.util.Date;
@@ -250,12 +249,10 @@ public class SessionEstablishmentTest extends TCKTest {
 				testResults.put(ID_MESSAGE_FLOW_EDGE_NODE_BIRTH_PUBLISH_WILL_MESSAGE_TOPIC,
 						setResult(true, MESSAGE_FLOW_EDGE_NODE_BIRTH_PUBLISH_WILL_MESSAGE_TOPIC));
 			} else {
-				testResults.put(ID_MESSAGE_FLOW_EDGE_NODE_BIRTH_PUBLISH_WILL_MESSAGE_TOPIC,
-						setResult(false, MESSAGE_FLOW_EDGE_NODE_BIRTH_PUBLISH_WILL_MESSAGE_TOPIC));
+				setResultIfNotPass(testResults, false, ID_MESSAGE_FLOW_EDGE_NODE_BIRTH_PUBLISH_WILL_MESSAGE_TOPIC, MESSAGE_FLOW_EDGE_NODE_BIRTH_PUBLISH_WILL_MESSAGE_TOPIC);
 			}
 		} else {
-			testResults.put(ID_MESSAGE_FLOW_EDGE_NODE_BIRTH_PUBLISH_WILL_MESSAGE_TOPIC,
-					setResult(false, MESSAGE_FLOW_EDGE_NODE_BIRTH_PUBLISH_WILL_MESSAGE_TOPIC));
+			setResultIfNotPass(testResults, false, ID_MESSAGE_FLOW_EDGE_NODE_BIRTH_PUBLISH_WILL_MESSAGE_TOPIC, MESSAGE_FLOW_EDGE_NODE_BIRTH_PUBLISH_WILL_MESSAGE_TOPIC);
 		}
 
 		testResults.put(ID_MESSAGE_FLOW_EDGE_NODE_BIRTH_PUBLISH_CONNECT,
