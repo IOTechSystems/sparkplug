@@ -238,52 +238,49 @@ public class SessionEstablishmentTest extends TCKTest {
 	public void connect(final @NotNull String clientId, final @NotNull ConnectPacket packet) {
 		logger.info("Edge session establishment test - connect");
 
-		/* Determine if this the connect packet for the Edge node under test.
-		 * Set the clientid if so. */
-		Optional<WillPublishPacket> willPublishPacketOptional = packet.getWillPublish();
-		if (willPublishPacketOptional.isPresent()) {
-			WillPublishPacket willPublishPacket = willPublishPacketOptional.get();
-			String willTopic = willPublishPacket.getTopic();
-			if (willTopic.equals(TOPIC_ROOT_SP_BV_1_0 + "/" + groupId + "/" + TOPIC_PATH_NDEATH + "/" + edgeNodeId)) {
-				testClientId = clientId;
-				logger.info("Edge session establishment test - connect - client id is " + clientId);
-				testResults.put(ID_MESSAGE_FLOW_EDGE_NODE_BIRTH_PUBLISH_WILL_MESSAGE_TOPIC,
-						setResult(true, MESSAGE_FLOW_EDGE_NODE_BIRTH_PUBLISH_WILL_MESSAGE_TOPIC));
+		if (testClientId == null){
+//			If testClientId is already set, then a valid connect message has already been received
+			Optional<WillPublishPacket> willPublishPacketOptional = packet.getWillPublish();
+			if (willPublishPacketOptional.isPresent()) {
+				WillPublishPacket willPublishPacket = willPublishPacketOptional.get();
+				String willTopic = willPublishPacket.getTopic();
+				if (willTopic.equals(TOPIC_ROOT_SP_BV_1_0 + "/" + groupId + "/" + TOPIC_PATH_NDEATH + "/" + edgeNodeId)) {
+					testClientId = clientId;
+					logger.info("Edge session establishment test - connect - client id is " + clientId);
+					testResults.put(ID_MESSAGE_FLOW_EDGE_NODE_BIRTH_PUBLISH_WILL_MESSAGE_TOPIC,
+							setResult(true, MESSAGE_FLOW_EDGE_NODE_BIRTH_PUBLISH_WILL_MESSAGE_TOPIC));
+				} else {
+					testResults.put(ID_MESSAGE_FLOW_EDGE_NODE_BIRTH_PUBLISH_WILL_MESSAGE_TOPIC,
+							setResult(false, MESSAGE_FLOW_EDGE_NODE_BIRTH_PUBLISH_WILL_MESSAGE_TOPIC));
+				}
 			} else {
 				testResults.put(ID_MESSAGE_FLOW_EDGE_NODE_BIRTH_PUBLISH_WILL_MESSAGE_TOPIC,
 						setResult(false, MESSAGE_FLOW_EDGE_NODE_BIRTH_PUBLISH_WILL_MESSAGE_TOPIC));
 			}
-		} else {
-			testResults.put(ID_MESSAGE_FLOW_EDGE_NODE_BIRTH_PUBLISH_WILL_MESSAGE_TOPIC,
-					setResult(false, MESSAGE_FLOW_EDGE_NODE_BIRTH_PUBLISH_WILL_MESSAGE_TOPIC));
-		}
 
-		testResults.put(ID_MESSAGE_FLOW_EDGE_NODE_BIRTH_PUBLISH_CONNECT,
-				setResult(testClientId != null, MESSAGE_FLOW_EDGE_NODE_BIRTH_PUBLISH_CONNECT));
+			if (testClientId != null) {
+				if (packet.getMqttVersion() == MqttVersion.V_5) {
+					logger.debug("Check Req: Clean start = true, session expiry interval = 0.");
+					testResults.put(ID_PRINCIPLES_PERSISTENCE_CLEAN_SESSION_50,
+							setResult(packet.getCleanStart() && (packet.getSessionExpiryInterval() == 0),
+									PRINCIPLES_PERSISTENCE_CLEAN_SESSION_50));
+				} else {
+					logger.debug("Check Req: Clean session should be set to true.");
+					testResults.put(ID_PRINCIPLES_PERSISTENCE_CLEAN_SESSION_311,
+							setResult(packet.getCleanStart(), PRINCIPLES_PERSISTENCE_CLEAN_SESSION_311));
+				}
 
-		if (testClientId != null) {
+				try {
+					willPublishPacketOptional = checkWillMessage(packet);
+					logger.debug("Check Req: NDEATH not registered as Will in connect packet");
+					testResults.put(ID_PAYLOADS_NDEATH_WILL_MESSAGE,
+							setResult(willPublishPacketOptional.isPresent(), PAYLOADS_NDEATH_WILL_MESSAGE));
 
-			if (packet.getMqttVersion() == MqttVersion.V_5) {
-				logger.debug("Check Req: Clean start = true, session expiry interval = 0.");
-				testResults.put(ID_PRINCIPLES_PERSISTENCE_CLEAN_SESSION_50,
-						setResult(packet.getCleanStart() && (packet.getSessionExpiryInterval() == 0),
-								PRINCIPLES_PERSISTENCE_CLEAN_SESSION_50));
-			} else {
-				logger.debug("Check Req: Clean session should be set to true.");
-				testResults.put(ID_PRINCIPLES_PERSISTENCE_CLEAN_SESSION_311,
-						setResult(packet.getCleanStart(), PRINCIPLES_PERSISTENCE_CLEAN_SESSION_311));
-			}
-
-			try {
-				willPublishPacketOptional = checkWillMessage(packet);
-				logger.debug("Check Req: NDEATH not registered as Will in connect packet");
-				testResults.put(ID_PAYLOADS_NDEATH_WILL_MESSAGE,
-						setResult(willPublishPacketOptional.isPresent(), PAYLOADS_NDEATH_WILL_MESSAGE));
-
-				testResults.put(ID_MESSAGE_FLOW_EDGE_NODE_BIRTH_PUBLISH_WILL_MESSAGE, setResult(
-						willPublishPacketOptional.isPresent(), MESSAGE_FLOW_EDGE_NODE_BIRTH_PUBLISH_WILL_MESSAGE));
-			} catch (Exception e) {
-				logger.error("Exception in Edge session establishment test: ", e);
+					testResults.put(ID_MESSAGE_FLOW_EDGE_NODE_BIRTH_PUBLISH_WILL_MESSAGE, setResult(
+							willPublishPacketOptional.isPresent(), MESSAGE_FLOW_EDGE_NODE_BIRTH_PUBLISH_WILL_MESSAGE));
+				} catch (Exception e) {
+					logger.error("Exception in Edge session establishment test: ", e);
+				}
 			}
 		}
 	}
@@ -332,10 +329,17 @@ public class SessionEstablishmentTest extends TCKTest {
 			id = ID_PAYLOADS_DDATA_ORDER)
 
 	public void publish(final @NotNull String clientId, final @NotNull PublishPacket packet) {
-		if (testClientId != null && testClientId.equals(clientId)) {
+		String topic = packet.getTopic();
+		String[] topicLevels = topic.split("/");
+
+		if(testClientId == null){
+			if (topicLevels[2].equals(TOPIC_PATH_NBIRTH) || (topicLevels[2].equals(TOPIC_PATH_DBIRTH) && topicLevels[3].equals(edgeNodeId))){
+				testResults.put(ID_MESSAGE_FLOW_EDGE_NODE_BIRTH_PUBLISH_CONNECT,
+						setResult(false, MESSAGE_FLOW_EDGE_NODE_BIRTH_PUBLISH_CONNECT));
+			}
+		}
+		else if (testClientId.equals(clientId)) {
 			logger.info("Edge session establishment test - publish -  to topic: {} ", packet.getTopic());
-			String topic = packet.getTopic();
-			String[] topicLevels = topic.split("/");
 
 			if (!(topicLevels[0].equals(TOPIC_ROOT_SP_BV_1_0) && topicLevels[1].equals(groupId))) {
 				logger.info("Skip - Edge session establishment test for this topic");
