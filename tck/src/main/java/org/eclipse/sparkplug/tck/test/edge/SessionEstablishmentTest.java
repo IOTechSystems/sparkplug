@@ -333,6 +333,7 @@ public class SessionEstablishmentTest extends TCKTest {
 		String[] topicLevels = topic.split("/");
 
 		if(testClientId == null){
+      // If testClientId is null, then a valid connect message has not been received so NBIRTH or DBIRTHs should not be received
 			if (topicLevels[2].equals(TOPIC_PATH_NBIRTH) || (topicLevels[2].equals(TOPIC_PATH_DBIRTH) && topicLevels[3].equals(edgeNodeId))){
 				testResults.put(ID_MESSAGE_FLOW_EDGE_NODE_BIRTH_PUBLISH_CONNECT,
 						setResult(false, MESSAGE_FLOW_EDGE_NODE_BIRTH_PUBLISH_CONNECT));
